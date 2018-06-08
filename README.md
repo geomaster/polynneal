@@ -38,7 +38,7 @@ redosledom:
 2. **Faktor hlađenja**. Konstanta sa kojom se množi temperatura svake iteracije.
    Uglavnom je ovaj broj blizu ali ne i jednak 1. Ukoliko se promeni broj
    iteracija ili inicijalna temperatura, potrebno je promeniti i ovaj parametar
-   kako bi se održala sličan tempo hlađenja.
+   kako bi se održao sličan tempo hlađenja.
 3. **Inicijalna temperatura**. Vrednost temperature sa kojom se počinje.
 4. **Broj iteracija**. Koliko puta izvršiti korak simuliranog kaljenja.
 5. *opciono* **Flag za CSV izlaz**. Ukoliko je ovaj parametar jednak `csv`, na
@@ -51,8 +51,8 @@ redosledom:
 
 Nakon pokretanja, na standardni izlaz za greške biće ispisan napredak algoritma,
 kao i finalno rešenje kada algoritam završi. Na ekranu će biti prikazan prozor sa
-trenutnim stanjem algoritma. Svetložuti poligon predstavlja trenutno stanje, dok
-sivi poligon predstavlja globalno najbolje stanje pronađeno u toku algoritma.
+trenutnim stanjem algoritma. Plavi poligon predstavlja trenutno stanje, dok
+žuti poligon predstavlja globalno najbolje stanje pronađeno u toku algoritma.
 
 ### Automatsko pokretanje na test primerima
 
