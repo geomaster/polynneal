@@ -1,14 +1,17 @@
+#ifndef HEADLESS
 #include "gui.hpp"
 #include <algorithm>
 #include <iostream>
 using namespace std;
 
 const double WINDOW_PADDING = 60.0;
-const double POINT_CIRCLE_RADIUS = 4.0;
-const double LINE_THICKNESS = 2.0;
+const double VERTEX_CIRCLE_RADIUS = 4.0;
+const double LINE_THICKNESS = 2.5;
 
-const sf::Color CURR_POLY_COLOR = sf::Color::Red;
-const sf::Color BEST_POLY_COLOR = sf::Color::Blue;
+const sf::Color VERTEX_COLOR = sf::Color::White;
+const sf::Color BEST_POLY_COLOR = sf::Color(0xefa60790);
+const sf::Color PREV_CURR_POLY_COLOR = sf::Color(0x4488e230);
+const sf::Color CURR_POLY_COLOR = sf::Color(0x4488e27a);
 
 gui::gui(int _width, int _height, const vector<Point>& points) :
     width(_width), height(_height)
@@ -42,37 +45,41 @@ gui::gui(int _width, int _height, const vector<Point>& points) :
     this->scale_factor = scale_factor;
 
     for (Point p : points) {
-        sf::CircleShape c(POINT_CIRCLE_RADIUS);
-        c.setFillColor(sf::Color::Black);
-        c.setOrigin(POINT_CIRCLE_RADIUS, POINT_CIRCLE_RADIUS);
+        sf::CircleShape c(VERTEX_CIRCLE_RADIUS);
+        c.setFillColor(VERTEX_COLOR);
+        c.setOrigin(VERTEX_CIRCLE_RADIUS, VERTEX_CIRCLE_RADIUS);
         c.setPosition(transform_point(p));
         point_shapes.push_back(c);
     }
 }
 
-void gui::set_current_poly(const Polygon& poly)
+void gui::set_current_poly(const vector<int>& permutation)
 {
-    current_poly = lines_from_poly(poly);
+    prev_current_poly = current_poly;
+    for (auto& l : prev_current_poly) {
+        l.setFillColor(PREV_CURR_POLY_COLOR);
+    }
+
+    current_poly = lines_from_permutation(permutation);
     for (auto& l : current_poly) {
         l.setFillColor(CURR_POLY_COLOR);
     }
 }
 
-void gui::set_best_poly(const Polygon& poly)
+void gui::set_best_poly(const vector<int>& permutation)
 {
-    best_poly = lines_from_poly(poly);
+    best_poly = lines_from_permutation(permutation);
     for (auto& l : best_poly) {
         l.setFillColor(BEST_POLY_COLOR);
     }
 }
 
-vector<sf::LineShape> gui::lines_from_poly(const Polygon& poly)
+vector<sf::LineShape> gui::lines_from_permutation(const vector<int>& permutation)
 {
-    vector<Point> pts(poly.vertices_begin(), poly.vertices_end());
     vector<sf::LineShape> result;
-    for (int i = 0; i < pts.size(); i++) {
-        sf::Vector2f current = transform_point(pts[i]);
-        sf::Vector2f next = transform_point(pts[(i + 1) % pts.size()]);
+    for (int i = 0; i < permutation.size(); i++) {
+        sf::Vector2f current = point_shapes[permutation[i]].getPosition();
+        sf::Vector2f next = point_shapes[permutation[(i + 1) % permutation.size()]].getPosition();
 
         auto l = sf::LineShape(current, next);
         l.setThickness(LINE_THICKNESS);
@@ -84,10 +91,13 @@ vector<sf::LineShape> gui::lines_from_poly(const Polygon& poly)
 
 void gui::draw(sf::RenderWindow& window)
 {
-    for (auto& l : best_poly) {
+    for (auto& l : prev_current_poly) {
         window.draw(l);
     }
     for (auto& l : current_poly) {
+        window.draw(l);
+    }
+    for (auto& l : best_poly) {
         window.draw(l);
     }
     for (auto& c : point_shapes) {
@@ -107,3 +117,5 @@ sf::Vector2f gui::transform_point(Point p)
 
     return sf::Vector2f(x, y);
 }
+
+#endif // HEADLESS

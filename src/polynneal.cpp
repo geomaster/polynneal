@@ -8,14 +8,14 @@ using namespace std;
 polynneal::polynneal(const vector<Point>& points, double _a, double T0, int num_iters) :
     k(0), a(_a), T(T0), k_max(num_iters)
 {
-    s = initial_polygon(points);
+    s = initial_solution(points);
     best_area = area = abs(s.area());
-    best_poly = s;
+    best_solution = s;
 }
 
-Polygon polynneal::get_best() const
+polynneal::solution_t polynneal::get_best() const
 {
-    return best_poly;
+    return best_solution;
 }
 
 double polynneal::get_best_area() const
@@ -23,7 +23,7 @@ double polynneal::get_best_area() const
     return best_area;
 }
 
-Polygon polynneal::get_current() const
+polynneal::solution_t polynneal::get_current() const
 {
     return s;
 }
@@ -45,7 +45,7 @@ bool polynneal::iteration()
     }
 
     T *= a;
-    Polygon s_new = neighbor(s);
+    solution_t s_new = neighbor(s);
     double rnd = (double)rand() / RAND_MAX;
     double new_area = abs(s_new.area());
 
@@ -55,7 +55,7 @@ bool polynneal::iteration()
         area = new_area;
         if (new_area < best_area) {
             best_area = new_area;
-            best_poly = s;
+            best_solution = s;
         }
     }
 
@@ -73,24 +73,27 @@ double polynneal::acceptance_probability(double e_old, double e_new, double T)
     }
 }
 
-Polygon polynneal::neighbor(const Polygon& s)
+polynneal::solution_t polynneal::neighbor(const solution_t& s_old)
 {
-    vector<Point> pts(s.vertices_begin(), s.vertices_end());
-    int i = rand() % pts.size(), j = rand() % pts.size();
-    swap(pts[i], pts[j]);
+    solution_t s = s_old;
+    int n = s.poly.size();
+    int i = rand() % n, j = rand() % n;
+    s.swap(i, j);
 
-    while (!CGAL::is_simple_2(pts.begin(), pts.end(), Miroljub())) {
+    while (!CGAL::is_simple_2(s.poly.begin(), s.poly.end(), Miroljub())) {
         // Swap back
-        swap(pts[i], pts[j]);
-        i = rand() % pts.size();
-        j = rand() % pts.size();
-        swap(pts[i], pts[j]);
+        s.swap(i, j);
+
+        // Try again
+        i = rand() % n;
+        j = rand() % n;
+        s.swap(i, j);
     }
 
-    return Polygon(pts.begin(), pts.end());
+    return s;
 }
 
-Polygon polynneal::initial_polygon(const vector<Point>& points)
+polynneal::solution_t polynneal::initial_solution(const vector<Point>& points)
 {
     Point first = points[0];
     double min_x = first.x(), max_x = first.x(), min_y = first.y(), max_y = first.y();
@@ -112,8 +115,15 @@ Polygon polynneal::initial_polygon(const vector<Point>& points)
 
     double cx = (min_x + max_x) / 2.0, cy = (min_y + max_y) / 2.0;
 
-    vector<Point> sorted = points;
-    sort(sorted.begin(), sorted.end(), [cx, cy] (const Point& a, const Point& b) -> bool {
+    vector<pair<Point, int>> sorted;
+    for (int i = 0; i < points.size(); i++) {
+        sorted.push_back({ points[i], i });
+    }
+
+    sort(sorted.begin(), sorted.end(), [cx, cy] (const auto& ap, const auto& bp) -> bool {
+        const auto& a = ap.first;
+        const auto& b = bp.first;
+
         double a1 = atan2(a.y() - cy, a.x() - cx);
         double a2 = atan2(b.y() - cy, b.x() - cx);
         if (abs(a1 - a2) < 1e-6) {
@@ -130,7 +140,14 @@ Polygon polynneal::initial_polygon(const vector<Point>& points)
         }
     });
 
-    return Polygon(sorted.begin(), sorted.end());
+    vector<Point> poly(sorted.size());
+    vector<int> perm(sorted.size());
+    for (int i = 0; i < sorted.size(); i++) {
+        poly[i] = sorted[i].first;
+        perm[i] = sorted[i].second;
+    }
+
+    return { poly, perm };
 }
 
 bool polynneal::kali(int num_iters)
